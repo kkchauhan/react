@@ -1,43 +1,46 @@
-name: Node.js CI/CD
+name: Node Github CI
 
-on: [push] # tells github to run this on any push to the repository
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-  test: # names the job
-    runs-on: ubuntu-latest # sets the version of linux we want to use, should be what you have on your server
+  test:
+
+    runs-on: ubuntu-latest
 
     strategy:
-      fail-fast: false # tells github to not run further steps if this one fails
       matrix:
-        node-version: [12.x] # sets the version of node we want to use, should be what you have on your server
+        node-version: [8.x, 10.x, 12.x]
 
     steps:
-      - uses: actions/checkout@v2 # fetches your commit to test it
-      - name: Use Node.js ${{ matrix.node-version }} # names our step
-        uses: actions/setup-node@v1 # downloads node and npm 
-        with:
-          node-version: ${{ matrix.node-version }} 
-      - run: npm install # installs your dependencies
-      - run: npm run test # builds your app
-      - run: npm test # runs your test suite
-        env:
-          CI: true # shows terminal output!
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: npm install and test
+      run: |
+        npm install
+        npm test
+      env:
+        CI: true
 
   deploy:
+    needs: [test]
     runs-on: ubuntu-latest
-    needs: test # this job depends on "test" having finished
-    if: github.ref == 'refs/heads/main' # we tell Github to only execute this step if we're on our main branch (so we don't put unfinished branches in production)
+
     steps:
-      - name: Deploying to Upcloud droplet
-        uses: appleboy/ssh-action@main # An action made to control Linux servers
-        with: # We set all our secrets here for the action, these won't be shown in the action logs
-          host: ${{ secrets.SSH_HOST }} 
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /home/react # we move into our app's folder
-            git pull # we pull any changes from git
-            npm prune # we remove any unused dependencies
-            npm install # we install any missing dependencies
-            npm run build # we build our app
+    - name: SSH and deploy node app
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          cd ~/node-github-demo
+          git pull origin master
+          npm install --production
+          pm2 restart node-app
