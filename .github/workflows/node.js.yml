@@ -6,10 +6,6 @@ on:
       - main
 
 jobs:
-<<<<<<< HEAD
-
-=======
->>>>>>> 031048f483b18e022e0e171069a68a1221cc1e0b
   deploy:
     runs-on: ubuntu-latest
 
