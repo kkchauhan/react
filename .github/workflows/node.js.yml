@@ -40,7 +40,8 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT }}
         script: |
-          cd ~/node-github-demo
+          cd /home/react
           git pull origin main
           npm install
           npm run build
+          #All end here
